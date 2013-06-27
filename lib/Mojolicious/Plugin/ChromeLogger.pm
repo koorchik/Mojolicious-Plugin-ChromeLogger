@@ -45,9 +45,9 @@ sub register {
 
             my $rows = $data->{rows};
 
-            my $group = 'Mojo ' . $c->req->url->path->to_string;
+            my $group = 'Mojolicious ' . $c->req->url->path->to_string;
             # Start group
-            push @$rows, [[ $group ], undef,  'group'];
+            push @$rows, [[ $group ], undef,  'groupCollapsed'];
 
             # Add session
             if ( $opts->{show_session} ) {
