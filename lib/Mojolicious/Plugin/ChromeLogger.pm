@@ -4,12 +4,12 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::ByteStream qw/b/;
 use Mojo::JSON;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 has logs => sub { return [] };
 
 my %types_map = (
-    'debug' => 'log',
+    'debug' => '',
     'info'  => 'info',
     'warn'  => 'warn',
     'error' => 'error',
@@ -39,11 +39,28 @@ sub register {
                 rows    => []
             };
 
+            my $rows = $data->{rows};
+
+            # Start group
+            push @$rows, [[ 'Mojolicious' ], undef,  'groupCollapsed'];
+
+            # Add session
+            push @$rows, [[ { '___class_name' => 'Session', %{$c->session} }], undef,  ''];
+
+            # Add config
+            push @$rows, [[ { '___class_name' => 'Config', %{$c->config} }], undef,  ''];
+
+            # Add stash
+            my %clean_stash = map { $_ => $c->stash($_) } grep { $_ !~ /^(?:mojo\.|config$)/ } keys %{ $c->stash };
+            push @$rows, [[ { '___class_name' => 'Stash', %clean_stash }], undef,  ''];
+
             # Logs: fatal, info, debug, error
             foreach my $msg (@$logs) {
-                push @{ $data->{rows} },
-                  [ $msg->[1], $msg->[2], $types_map{ $msg->[0] } ];
+                push @$rows, [ $msg->[1], $msg->[2], $types_map{ $msg->[0] } ];
             }
+
+            # End group
+            push @$rows, [[ 'Mojolicious' ], undef,  'groupEnd'];
 
             my $json       = Mojo::JSON->new()->encode($data);
             my $final_data = b($json)->b64_encode('');
@@ -79,7 +96,7 @@ Mojolicious::Plugin::ChromeLogger - Push Mojolicious logs to Google Chrome conso
 
 =head1 DESCRIPTION
 
-L<Mojolicious::Plugin::ChromeLogger> pushes Mojolicious log messages to Google Chrome console. Works with all types of responses(including JSON).
+L<Mojolicious::Plugin::ChromeLogger> pushes Mojolicious log messages, stash, session and config to Google Chrome console. Works with all types of responses(including JSON).
 To view logs in Google Chrome you should install ChromeLogger extenstion. Logging works only in development mode.
 
 See details here http://craig.is/writing/chrome-logger
