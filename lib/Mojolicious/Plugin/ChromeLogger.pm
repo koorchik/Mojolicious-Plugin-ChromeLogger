@@ -17,7 +17,11 @@ my %types_map = (
 );
 
 sub register {
-    my ( $self, $app ) = @_;
+    my ( $self, $app, $opts ) = @_;
+
+    $opts->{show_session} //= 1;
+    $opts->{show_config}  //= 0;
+    $opts->{show_stash}   //= 1;
 
     # We do use monkey patch instead of inheriting Mojo::Log to be compatible with Log::Any::Adapter::Mojo
     $self->_monkey_patch_logger();
@@ -41,18 +45,25 @@ sub register {
 
             my $rows = $data->{rows};
 
+            my $group = 'Mojo ' . $c->req->url->path->to_string;
             # Start group
-            push @$rows, [[ 'Mojolicious' ], undef,  'groupCollapsed'];
+            push @$rows, [[ $group ], undef,  'group'];
 
             # Add session
-            push @$rows, [[ { '___class_name' => 'Session', %{$c->session} }], undef,  ''];
+            if ( $opts->{show_session} ) {
+                push @$rows, [[ { '___class_name' => 'Session', %{$c->session} }], undef,  ''];
+            }
 
             # Add config
-            push @$rows, [[ { '___class_name' => 'Config', %{$c->config} }], undef,  ''];
+            if ( $opts->{show_config} ) {
+                push @$rows, [[ { '___class_name' => 'Config', %{$c->config} }], undef,  ''];
+            }
 
             # Add stash
-            my %clean_stash = map { $_ => $c->stash($_) } grep { $_ !~ /^(?:mojo\.|config$)/ } keys %{ $c->stash };
-            push @$rows, [[ { '___class_name' => 'Stash', %clean_stash }], undef,  ''];
+            if ( $opts->{show_stash} ) {
+                my %clean_stash = map { $_ => $c->stash($_) } grep { $_ !~ /^(?:mojo\.|config$)/ } keys %{ $c->stash };
+                push @$rows, [[ { '___class_name' => 'Stash', %clean_stash }], undef,  ''];
+            }
 
             # Logs: fatal, info, debug, error
             foreach my $msg (@$logs) {
@@ -60,7 +71,7 @@ sub register {
             }
 
             # End group
-            push @$rows, [[ 'Mojolicious' ], undef,  'groupEnd'];
+            push @$rows, [[ $group ], undef,  'groupEnd'];
 
             my $json       = Mojo::JSON->new()->encode($data);
             my $final_data = b($json)->b64_encode('');
@@ -82,7 +93,7 @@ sub _monkey_patch_logger {
 
         *{"Mojo::Log::$level"} = sub {
             my ($package, $filename, $line) = caller;
-            push @{ $self->logs }, [ $level, [ $_[-1] ], "at $filename:$line" ];
+            push @{ $self->logs }, [ $level, [ '> ' . $_[-1] ], "at $filename:$line" ];
             $orig->(@_);
         };
     }
