@@ -46,7 +46,7 @@ sub register {
             }
 
             my $json       = Mojo::JSON->new()->encode($data);
-            my $final_data = b($json)->encode('UTF-8')->b64_encode('');
+            my $final_data = b($json)->b64_encode('');
             $c->res->headers->add( 'X-ChromeLogger-Data' => $final_data );
 
             $self->logs( [] );
@@ -65,7 +65,7 @@ sub _monkey_patch_logger {
 
         *{"Mojo::Log::$level"} = sub {
             my ($package, $filename, $line) = caller;
-            push @{ $self->logs }, [ $level, $_[-1], "$filename:$line" ];
+            push @{ $self->logs }, [ $level, [ $_[-1] ], "at $filename:$line" ];
             $orig->(@_);
         };
     }
