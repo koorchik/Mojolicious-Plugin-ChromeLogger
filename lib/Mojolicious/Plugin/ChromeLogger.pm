@@ -1,141 +1,64 @@
 package Mojolicious::Plugin::ChromeLogger;
 
-use 5.006;
-use strict;
-use warnings FATAL => 'all';
+use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::ByteStream qw/b/;
+use Mojo::JSON;
 
-=head1 NAME
+our $VERSION = 0.01;
 
-Mojolicious::Plugin::ChromeLogger - The great new Mojolicious::Plugin::ChromeLogger!
+has logs => sub { return [] };
 
-=head1 VERSION
+my %types_map = (
+    'debug' => 'log',
+    'info'  => 'info',
+    'warn'  => 'warn',
+    'error' => 'error',
+    'fatal' => 'error',
+);
 
-Version 0.01
+sub register {
+    my ( $self, $app ) = @_;
 
-=cut
+    # override Mojo::Log->log
+    no strict 'refs';
+    my $stash = \%{"Mojo::Log::"};
+    my $orig  = delete $stash->{"log"};
 
-our $VERSION = '0.01';
+    *{"Mojo::Log::log"} = sub {
+        push @{ $self->logs }, [ $_[1], $_[-1] ];
+        $orig->(@_);
+    };
 
+    $app->hook(
+        after_dispatch => sub {
+            my ($c) = @_;
+            my $logs = $self->logs;
 
-=head1 SYNOPSIS
+            # Leave static content untouched
+            return if $c->stash('mojo.static');
 
-Quick summary of what the module does.
+            # Do not allow if not development mode
+            return if $c->app->mode ne 'development';
 
-Perhaps a little code snippet.
+            my $data = {
+                version => '0.01',
+                columns => [ 'log', 'backtrace', 'type' ],
+                rows    => []
+            };
 
-    use Mojolicious::Plugin::ChromeLogger;
+            # Logs: fatal, info, debug, error
+            foreach my $msg (@$logs) {
+                push @{ $data->{rows} },
+                  [ $msg->[1], undef, $types_map{ $msg->[0] } ];
+            }
 
-    my $foo = Mojolicious::Plugin::ChromeLogger->new();
-    ...
+            my $json       = Mojo::JSON->new()->encode($data);
+            my $final_data = b($json)->encode('UTF-8')->b64_encode('');
+            $c->res->headers->add( 'X-ChromeLogger-Data' => $final_data );
 
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
-
-=head2 function1
-
-=cut
-
-sub function1 {
+            $self->logs( [] );
+        }
+    );
 }
 
-=head2 function2
-
-=cut
-
-sub function2 {
-}
-
-=head1 AUTHOR
-
-Viktor Turskyi, C<< <koorchik at cpan.org> >>
-
-=head1 BUGS
-
-Please report any bugs or feature requests to C<bug-mojolicious-plugin-chromelogger at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Mojolicious-Plugin-ChromeLogger>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
-
-
-
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc Mojolicious::Plugin::ChromeLogger
-
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker (report bugs here)
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mojolicious-Plugin-ChromeLogger>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Mojolicious-Plugin-ChromeLogger>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Mojolicious-Plugin-ChromeLogger>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Mojolicious-Plugin-ChromeLogger/>
-
-=back
-
-
-=head1 ACKNOWLEDGEMENTS
-
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright 2013 Viktor Turskyi.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the the Artistic License (2.0). You may obtain a
-copy of the full license at:
-
-L<http://www.perlfoundation.org/artistic_license_2_0>
-
-Any use, modification, and distribution of the Standard or Modified
-Versions is governed by this Artistic License. By using, modifying or
-distributing the Package, you accept this license. Do not use, modify,
-or distribute the Package, if you do not accept this license.
-
-If your Modified Version has been derived from a Modified Version made
-by someone other than you, you are nevertheless required to ensure that
-your Modified Version complies with the requirements of this license.
-
-This license does not grant you the right to use any trademark, service
-mark, tradename, or logo of the Copyright Holder.
-
-This license includes the non-exclusive, worldwide, free-of-charge
-patent license to make, have made, use, offer to sell, sell, import and
-otherwise transfer the Package with respect to any patent claims
-licensable by the Copyright Holder that are necessarily infringed by the
-Package. If you institute patent litigation (including a cross-claim or
-counterclaim) against any party alleging that the Package constitutes
-direct or contributory patent infringement, then this Artistic License
-to you shall terminate on the date that such litigation is filed.
-
-Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER
-AND CONTRIBUTORS "AS IS' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
-THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY
-YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
-CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
-CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
-EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-=cut
-
-1; # End of Mojolicious::Plugin::ChromeLogger
+1;
