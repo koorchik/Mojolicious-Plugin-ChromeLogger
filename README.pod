@@ -1,0 +1,60 @@
+
+=head1 NAME
+
+Mojolicious::Plugin::ChromeLogger - Show Mojolicious logs in Google Chrome console
+
+=head1 DESCRIPTION
+
+L<Mojolicious::Plugin::ChromeLogger> pushes Mojolicious log messages to Google Chrome console. Works with any types of responses(even with JSON).
+To view logs in Google Chrome you should install ChromeLogger extenstion. Logging works only in development mode.
+
+See details here http://craig.is/writing/chrome-logger
+
+=head1 USAGE
+
+    use Mojolicious::Lite;
+
+    plugin 'ChromeLogger';
+
+    get '/' => sub {
+        my $self = shift;
+
+        app->log->debug('Some debug here');
+        app->log->info('Some info here');
+        app->log->warn('Some warn here');
+        app->log->error('Some error here');
+        app->log->fatal('Some fatal here');
+
+        $self->render( text => 'Open Google Chrome console' );
+    };
+
+    app->start;
+
+=head1 METHODS
+
+L<Mojolicious::Plugin::ChromeLogger> inherits all methods from
+L<Mojolicious::Plugin> and implements the following new ones.
+
+=head2 C<register>
+
+    $plugin->register;
+
+Register condition in L<Mojolicious> application.
+
+=head1 SEE ALSO
+
+L<Mojolicious::Plugin::ConsoleLogger>
+
+=head1 DEVELOPMENT
+
+L<https://github.com/koorchik/Mojolicious-Plugin-ChromeLogger>
+
+=head1 CREDITS
+
+Inspired by L<Mojolicious::Plugin::ConsoleLogger>
+
+=head1 AUTHORS
+
+Viktor Turskyi koorchik@cpan.org
+
+=cut
