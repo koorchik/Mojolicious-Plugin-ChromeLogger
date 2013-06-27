@@ -1,11 +1,11 @@
 
 =head1 NAME
 
-Mojolicious::Plugin::ChromeLogger - Show Mojolicious logs in Google Chrome console
+Mojolicious::Plugin::ChromeLogger - Push Mojolicious logs to Google Chrome console
 
 =head1 DESCRIPTION
 
-L<Mojolicious::Plugin::ChromeLogger> pushes Mojolicious log messages to Google Chrome console. Works with any types of responses(even with JSON).
+L<Mojolicious::Plugin::ChromeLogger> pushes Mojolicious log messages to Google Chrome console. Works with all types of responses(including JSON).
 To view logs in Google Chrome you should install ChromeLogger extenstion. Logging works only in development mode.
 
 See details here http://craig.is/writing/chrome-logger
