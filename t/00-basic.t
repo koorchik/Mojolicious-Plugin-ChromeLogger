@@ -25,6 +25,6 @@ $t
 ->get_ok('/')
 ->status_is(200)
 ->content_is('Open Chrome console')
-->header_like('X-ChromeLogger-Data' => qr/[a-z]+/);
+->header_like( 'X-ChromeLogger-Data' => qr/[a-z0-9\.\/=]+/i );
 
 done_testing();
