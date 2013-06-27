@@ -20,7 +20,7 @@ sub register {
     my ( $self, $app, $opts ) = @_;
 
     $opts->{show_session} //= 1;
-    $opts->{show_config}  //= 0;
+    $opts->{show_config}  //= 1;
     $opts->{show_stash}   //= 1;
 
     # We do use monkey patch instead of inheriting Mojo::Log to be compatible with Log::Any::Adapter::Mojo
