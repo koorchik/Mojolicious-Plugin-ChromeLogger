@@ -4,11 +4,9 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::ByteStream qw/b/;
 use Mojo::JSON;
 
-use Mojo::Log::ChromeLogger;
-
 our $VERSION = 0.02;
 
-has 'chrome_log';
+has logs => sub { return [] };
 
 my %types_map = (
     'debug' => 'log',
@@ -21,14 +19,13 @@ my %types_map = (
 sub register {
     my ( $self, $app ) = @_;
 
-    $self->chrome_log( Mojo::Log::ChromeLogger->new() );
-    $app->log( $self->chrome_log );
+    # We do use monkey patch instead of inheriting Mojo::Log to be compatible with Log::Any::Adapter::Mojo
+    $self->_monkey_patch_logger();
 
     $app->hook(
         after_dispatch => sub {
             my ($c) = @_;
-            my $logs = $self->chrome_log->history;
-            $self->chrome_log->history([]);
+            my $logs = $self->logs;
 
             # Leave static content untouched
             return if $c->stash('mojo.static');
@@ -52,8 +49,26 @@ sub register {
             my $final_data = b($json)->encode('UTF-8')->b64_encode('');
             $c->res->headers->add( 'X-ChromeLogger-Data' => $final_data );
 
+            $self->logs( [] );
         }
     );
+}
+
+sub _monkey_patch_logger {
+    my ($self) = @_;
+
+    no strict 'refs';
+    my $stash = \%{"Mojo::Log::"};
+
+    foreach my $level (qw/debug info warn error fatal/) {
+        my $orig  = delete $stash->{$level};
+
+        *{"Mojo::Log::$level"} = sub {
+            my ($package, $filename, $line) = caller;
+            push @{ $self->logs }, [ $level, $_[-1], "$filename:$line" ];
+            $orig->(@_);
+        };
+    }
 }
 
 1;
