@@ -46,7 +46,7 @@ sub register {
             my $rows = $data->{rows};
 
             # Start main group
-            my $main_group = 'Mojolicious ' . $c->req->url->path->to_string;
+            my $main_group = 'Mojolicious: ' . $c->req->url->path->to_string;
             push @$rows, [[ $main_group ], undef,  'groupCollapsed'];
 
             # Add session
@@ -66,11 +66,12 @@ sub register {
             }
 
             # Logs: fatal, info, debug, error
-            push @$rows, [[ 'logs' ], undef,  'groupCollapsed'];
+            push @$rows, [[ 'logs' ], undef,  'group'];
 
             foreach my $msg (@$logs) {
                 push @$rows, [ $msg->[1], $msg->[2], $types_map{ $msg->[0] } ];
             }
+
             push @$rows, [[ 'logs' ], undef,  'groupEnd'];
 
             # End main group
