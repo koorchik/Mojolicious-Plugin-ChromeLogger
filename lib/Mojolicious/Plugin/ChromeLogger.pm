@@ -107,7 +107,7 @@ sub _monkey_patch_logger {
 
 =head1 NAME
 
-Mojolicious::Plugin::ChromeLogger - Push Mojolicious logs to Google Chrome console
+Mojolicious::Plugin::ChromeLogger - Pushes Mojolicious logs, stash, session, config to Google Chrome console
 
 =head1 DESCRIPTION
 
