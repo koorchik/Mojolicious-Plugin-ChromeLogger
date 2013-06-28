@@ -11,3 +11,8 @@ Revision history for Mojolicious-Plugin-ChromeLogger
 0.03
         Groupped output
         Dumps session, stash, config
+
+0.04
+
+        Now configurable
+        Better grouping

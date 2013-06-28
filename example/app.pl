@@ -6,7 +6,7 @@ use Mojolicious::Lite;
 use FindBin qw/$Bin/;
 use lib "$Bin/../lib";
 
-plugin 'ChromeLogger';
+plugin 'ChromeLogger' => {show_config => 1};
 
 get '/' => sub {
     my $self = shift;

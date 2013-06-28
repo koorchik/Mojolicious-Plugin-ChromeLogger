@@ -4,7 +4,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::ByteStream qw/b/;
 use Mojo::JSON;
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 has logs => sub { return [] };
 
@@ -20,8 +20,8 @@ sub register {
     my ( $self, $app, $opts ) = @_;
 
     $opts->{show_session} //= 1;
-    $opts->{show_config}  //= 1;
     $opts->{show_stash}   //= 1;
+    $opts->{show_config}  //= 0;
 
     # We do use monkey patch instead of inheriting Mojo::Log to be compatible with Log::Any::Adapter::Mojo
     $self->_monkey_patch_logger();
@@ -45,9 +45,9 @@ sub register {
 
             my $rows = $data->{rows};
 
-            my $group = 'Mojolicious ' . $c->req->url->path->to_string;
-            # Start group
-            push @$rows, [[ $group ], undef,  'groupCollapsed'];
+            # Start main group
+            my $main_group = 'Mojolicious ' . $c->req->url->path->to_string;
+            push @$rows, [[ $main_group ], undef,  'groupCollapsed'];
 
             # Add session
             if ( $opts->{show_session} ) {
@@ -66,12 +66,15 @@ sub register {
             }
 
             # Logs: fatal, info, debug, error
+            push @$rows, [[ 'logs' ], undef,  'groupCollapsed'];
+
             foreach my $msg (@$logs) {
                 push @$rows, [ $msg->[1], $msg->[2], $types_map{ $msg->[0] } ];
             }
+            push @$rows, [[ 'logs' ], undef,  'groupEnd'];
 
-            # End group
-            push @$rows, [[ $group ], undef,  'groupEnd'];
+            # End main group
+            push @$rows, [[ $main_group ], undef,  'groupEnd'];
 
             my $json       = Mojo::JSON->new()->encode($data);
             my $final_data = b($json)->b64_encode('');
@@ -93,7 +96,7 @@ sub _monkey_patch_logger {
 
         *{"Mojo::Log::$level"} = sub {
             my ($package, $filename, $line) = caller;
-            push @{ $self->logs }, [ $level, [ '> ' . $_[-1] ], "at $filename:$line" ];
+            push @{ $self->logs }, [ $level, [ $_[-1] ], "at $filename:$line" ];
             $orig->(@_);
         };
     }
@@ -117,6 +120,7 @@ See details here http://craig.is/writing/chrome-logger
     use Mojolicious::Lite;
 
     plugin 'ChromeLogger';
+    #  or with options - plugin 'ChromeLogger' => {show_config => 1};
 
     get '/' => sub {
         my $self = shift;
@@ -132,16 +136,21 @@ See details here http://craig.is/writing/chrome-logger
 
     app->start;
 
-=head1 METHODS
+=head1 CONFIG
 
-L<Mojolicious::Plugin::ChromeLogger> inherits all methods from
-L<Mojolicious::Plugin> and implements the following new ones.
+=head2 C<show_config>
 
-=head2 C<register>
+push config to ChromeLogger (default 0)
 
-    $plugin->register;
+By default we do not show config. It is usually static and can contain confidential data.
 
-Register condition in L<Mojolicious> application.
+=head2 C<show_stash>
+
+push stash to ChromeLogger (default 1)
+
+=head2 C<show_session>
+
+push session to ChromeLogger (default 1)
 
 =head1 SEE ALSO
 
