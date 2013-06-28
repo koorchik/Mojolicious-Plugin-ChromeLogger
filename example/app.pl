@@ -8,8 +8,10 @@ use lib "$Bin/../lib";
 
 plugin 'ChromeLogger' => {show_config => 1};
 
-get '/' => sub {
+get '/logger_test' => sub {
     my $self = shift;
+
+    $self->session('user_id', 42);
 
     my $log = $self->app->log;
 

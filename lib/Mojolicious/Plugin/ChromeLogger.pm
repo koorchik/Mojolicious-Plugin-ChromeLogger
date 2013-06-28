@@ -4,7 +4,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::ByteStream qw/b/;
 use Mojo::JSON;
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 has logs => sub { return [] };
 
@@ -46,7 +46,7 @@ sub register {
             my $rows = $data->{rows};
 
             # Start main group
-            my $main_group = 'Mojolicious: ' . $c->req->url->path->to_string;
+            my $main_group = 'Mojolicious: ' . $c->req->method . ' ' . $c->req->url->path->to_string;
             push @$rows, [[ $main_group ], undef,  'groupCollapsed'];
 
             # Add session

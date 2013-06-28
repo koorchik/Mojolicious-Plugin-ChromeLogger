@@ -13,6 +13,8 @@ Revision history for Mojolicious-Plugin-ChromeLogger
         Dumps session, stash, config
 
 0.04
-
         Now configurable
         Better grouping
+
+0.05
+        HTTP Method in group name
