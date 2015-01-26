@@ -2,7 +2,7 @@ package Mojolicious::Plugin::ChromeLogger;
 
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::ByteStream qw/b/;
-use Mojo::JSON;
+use Mojo::JSON qw(encode_json);
 
 our $VERSION = 0.05;
 
@@ -77,7 +77,7 @@ sub register {
             # End main group
             push @$rows, [[ $main_group ], undef,  'groupEnd'];
 
-            my $json       = Mojo::JSON->new()->encode($data);
+            my $json       = encode_json($data);
             my $final_data = b($json)->b64_encode('');
             $c->res->headers->add( 'X-ChromeLogger-Data' => $final_data );
 
