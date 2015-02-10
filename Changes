@@ -18,3 +18,6 @@ Revision history for Mojolicious-Plugin-ChromeLogger
 
 0.05
         HTTP Method in group name
+
+0.06
+        Fix usage with Mojolicious 5.73
